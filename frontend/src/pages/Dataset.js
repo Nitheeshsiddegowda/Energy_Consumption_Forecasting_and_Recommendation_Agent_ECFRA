@@ -1,78 +1,124 @@
-// src/pages/Dataset.js
 import React, { useState } from "react";
+import axios from "axios";
 
 const Dataset = () => {
-  const [previewTable, setPreviewTable] = useState("");
 
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      alert("Please select a file.");
-      return;
+    const [preview,setPreview]=useState([]);
+    const [columns,setColumns]=useState([]);
+
+    const handleUpload = async(e)=>{
+
+        const file=e.target.files[0];
+
+        if(!file){
+            alert("Select CSV");
+            return;
+        }
+
+        const formData=new FormData();
+
+        formData.append("dataset_name",file.name);
+
+        formData.append("dataset_file",file);
+
+        try{
+
+            const upload=await axios.post(
+                "http://127.0.0.1:8000/api/energy/datasets/",
+                formData
+            );
+
+            const id=upload.data.id;
+
+            const previewData=await axios.get(
+                `http://127.0.0.1:8000/api/energy/datasets/${id}/preview/`
+            );
+
+            setColumns(previewData.data.columns);
+
+            setPreview(previewData.data.preview);
+
+            alert("Dataset Uploaded Successfully");
+
+        }
+
+        catch(err){
+
+            console.log(err);
+
+            alert("Upload Failed");
+
+        }
+
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const content = ev.target.result.trim();
-      const rows = content.split("\n").map((row) => row.split(","));
+    return(
 
-      if (rows.length < 2) {
-        alert("Invalid or empty dataset.");
-        return;
-      }
+        <div className="content">
 
-      // Save dataset to localStorage
-      localStorage.setItem("dataset", JSON.stringify(rows));
+            <h2>Upload Dataset</h2>
 
-      // Build HTML preview
-      const tableHtml = `
-        <table border='1'>
-          ${rows
-            .slice(0, 6)
-            .map(
-              (row) =>
-                `<tr>${row.map((cell) => `<td>${cell.trim()}</td>`).join("")}</tr>`
-            )
-            .join("")}
-        </table>
-      `;
-      setPreviewTable(tableHtml);
+            <input
+                type="file"
+                accept=".csv"
+                onChange={handleUpload}
+            />
 
-      alert("✅ Dataset uploaded successfully!");
-    };
+            <br/><br/>
 
-    reader.readAsText(file);
-  };
+            {
+                preview.length>0 &&
 
-  return (
-    <div className="page-container">
-      {/* Sidebar */}
-      <nav className="sidebar">
-        <ul>
-          <li><a href="/dataset">Dataset Upload</a></li>
-          <li><a href="/overview">Overview</a></li>
-          <li><a href="/distribution">Distribution</a></li>
-          <li><a href="/forecasting">Forecasting</a></li>
-          <li><a href="/recommendation">Recommendation</a></li>
-          <li><a href="/prediction">Prediction</a></li>
-        </ul>
-      </nav>
+                <table border="1">
 
-      {/* Main Content */}
-      <main className="content">
-        <h2>Upload Dataset</h2>
-        <div className="upload-container">
-          <input type="file" accept=".csv,.xlsx" onChange={handleUpload} />
+                    <thead>
+
+                        <tr>
+
+                            {
+                                columns.map(col=>
+
+                                    <th key={col}>{col}</th>
+
+                                )
+                            }
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+                            preview.map((row,index)=>
+
+                                <tr key={index}>
+
+                                    {
+                                        columns.map(col=>
+
+                                            <td key={col}>
+                                                {row[col]}
+                                            </td>
+
+                                        )
+                                    }
+
+                                </tr>
+
+                            )
+                        }
+
+                    </tbody>
+
+                </table>
+
+            }
+
         </div>
 
-        <h3>Preview Data</h3>
-        <div
-          id="previewContainer"
-          dangerouslySetInnerHTML={{ __html: previewTable }}
-        ></div>
-      </main>
-    </div>
-  );
-};
+    )
+
+}
 
 export default Dataset;
