@@ -4,6 +4,7 @@ from .views import (
     DatasetUploadView,
     DatasetPreviewView,
     DatasetOverviewView,
+    DatasetDistributionView,
 )
 
 urlpatterns = [
@@ -24,5 +25,11 @@ urlpatterns = [
         "datasets/<int:pk>/overview/",
         DatasetOverviewView.as_view(),
         name="overview"
-),
+    ),
+
+    path(
+    "datasets/<int:pk>/distribution/",
+    DatasetDistributionView.as_view(),
+    name="distribution"
+    ),
 ]

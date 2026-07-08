@@ -194,3 +194,85 @@ class DatasetOverviewView(APIView):
                 status=400
 
             )
+
+class DatasetDistributionView(APIView):
+
+    def get(self, request, pk):
+
+        try:
+
+            dataset = EnergyDataset.objects.get(id=pk)
+
+            df = load_dataset(dataset)
+
+            # Monthly Consumption
+            monthly = (
+                df.groupby(df["Date"].dt.strftime("%Y-%m"))["Units"]
+                .sum()
+                .reset_index()
+            )
+
+            monthly_chart = [
+                {
+                    "month": row["Date"],
+                    "units": round(row["Units"], 2)
+                }
+                for _, row in monthly.iterrows()
+            ]
+
+            # Appliance Consumption
+            appliances = [
+                "Fan(Units)",
+                "Fridge(Units)",
+                "AC(Units)",
+                "Bulb(Units)",
+                "TV(Units)",
+                "Monitor(Units)",
+                "Motor(Units)"
+            ]
+
+            appliance_chart = []
+
+            for col in appliances:
+
+                appliance_chart.append({
+
+                    "name": col.replace("(Units)", ""),
+
+                    "units": round(df[col].sum(), 2)
+
+                })
+
+            # Temperature Distribution
+            temperature_chart = [
+                {
+                    "temperature": round(row["Temperature"], 2),
+                    "units": round(row["Units"], 2)
+                }
+
+                for _, row in df.iterrows()
+            ]
+
+            return Response({
+
+                "monthly_chart": monthly_chart,
+
+                "appliance_chart": appliance_chart,
+
+                "temperature_chart": temperature_chart
+
+            })
+
+        except Exception as e:
+
+            return Response(
+
+                {
+
+                    "error": str(e)
+
+                },
+
+                status=400
+
+            )
