@@ -6,6 +6,7 @@ from energy.utils import load_dataset
 
 from .ml import train_models
 from .ml import predict_units
+from .services import generate_forecast
 
 class TrainModelView(APIView):
 
@@ -56,4 +57,34 @@ class PredictView(APIView):
 
                 status=400
 
+            )
+        
+class SeasonalForecastView(APIView):
+
+    def post(self, request):
+
+        try:
+
+            month = int(request.data.get("month"))
+            days = int(request.data.get("days"))
+
+            dataset = EnergyDataset.objects.latest("uploaded_at")
+
+            df = load_dataset(dataset)
+
+            result = generate_forecast(
+                df,
+                month,
+                days
+            )
+
+            return Response(result)
+
+        except Exception as e:
+
+            return Response(
+                {
+                    "error": str(e)
+                },
+                status=400
             )

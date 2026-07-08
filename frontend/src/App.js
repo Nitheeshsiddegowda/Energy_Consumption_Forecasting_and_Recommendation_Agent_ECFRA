@@ -1,7 +1,8 @@
 // src/App.js
+import "./styles/App.css";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Sidebar from "./pages/Sidebar"; // or Navbar if you use that
+import Sidebar from "./components/Sidebar"; // or Navbar if you use that
 import ForecastingPage from "./pages/ForecastingPage";
 import DistributionPage from "./pages/DistributionPage";
 import Overview from "./pages/Overview";

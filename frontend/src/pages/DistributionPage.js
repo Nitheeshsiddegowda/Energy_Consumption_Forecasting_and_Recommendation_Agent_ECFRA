@@ -1,5 +1,6 @@
 // src/pages/DistributionPage.js
 import React, { useEffect, useState } from "react";
+import "../styles/dashboard.css";
 import { Bar, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
