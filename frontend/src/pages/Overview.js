@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "../styles/style.css";
 import {
   LineChart,
@@ -11,95 +12,38 @@ import {
 } from "recharts";
 
 function Overview() {
-  const [totalEnergy, setTotalEnergy] = useState(0);
-  const [averageEnergy, setAverageEnergy] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [chartData, setChartData] = useState([]);
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [highestMonth, setHighestMonth] = useState("");
-  const [lowestMonth, setLowestMonth] = useState("");
+  const [overview, setOverview] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("dataset");
-    if (!stored) {
-      alert("Please upload the dataset first!");
-      return;
-    }
 
-    const data = JSON.parse(stored);
-    if (!data || data.length < 2) {
-      alert("Invalid dataset.");
-      return;
-    }
+    fetchOverview();
 
-    const header = data[0];
-    const rows = data.slice(1);
-
-    const dateIndex = 0; // assuming first column is date
-    const unitsIndex = header.indexOf("Units");
-
-    if (unitsIndex === -1) {
-      alert("❌ 'Units' column not found in dataset.");
-      return;
-    }
-
-    let totalEnergySum = 0;
-    const dailyUsage = {};
-    const monthlyUsage = {};
-
-    rows.forEach((row) => {
-      const dateStr = row[dateIndex];
-      const units = parseFloat(row[unitsIndex]);
-      if (!isNaN(units) && dateStr) {
-        totalEnergySum += units;
-
-        // Daily usage
-        dailyUsage[dateStr] = (dailyUsage[dateStr] || 0) + units;
-
-        // Monthly aggregation
-        const dateObj = new Date(dateStr);
-        if (!isNaN(dateObj)) {
-          const monthKey = `${dateObj.getFullYear()}-${String(
-            dateObj.getMonth() + 1
-          ).padStart(2, "0")}`;
-          monthlyUsage[monthKey] = (monthlyUsage[monthKey] || 0) + units;
-        }
-      }
-    });
-
-    const totalDays = Object.keys(dailyUsage).length;
-    const avgEnergy = totalDays > 0 ? totalEnergySum / totalDays : 0;
-
-    setTotalEnergy(totalEnergySum.toFixed(2));
-    setAverageEnergy(avgEnergy.toFixed(2));
-    setTotalRecords(rows.length);
-
-    // Convert daily usage to chart data
-    const chartArray = Object.entries(dailyUsage).map(([date, units]) => ({
-      date,
-      units,
-    }));
-    setChartData(chartArray);
-
-    // Convert monthly usage to chart data
-    const monthlyArray = Object.entries(monthlyUsage).map(([month, units]) => ({
-      month,
-      units,
-    }));
-
-    setMonthlyData(monthlyArray);
-
-    // Determine highest & lowest consumption months
-    if (monthlyArray.length > 0) {
-      const sorted = [...monthlyArray].sort((a, b) => b.units - a.units);
-      setHighestMonth(`${sorted[0].month} (${sorted[0].units.toFixed(2)} kWh)`);
-      setLowestMonth(
-        `${sorted[sorted.length - 1].month} (${sorted[
-          sorted.length - 1
-        ].units.toFixed(2)} kWh)`
-      );
-    }
   }, []);
+
+  const fetchOverview = async () => {
+
+    try {
+
+        const response = await axios.get(
+            "http://127.0.0.1:8000/api/energy/datasets/1/overview/"
+        );
+
+        setOverview(response.data);
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+  };
+
+  if (!overview) {
+      return <h2>Loading...</h2>;
+  }
+  
 
   return (
     <div className="page-container">
@@ -123,32 +67,32 @@ function Overview() {
         <div className="summary-container">
           <div className="card">
             <h3>Average per Day</h3>
-            <p>{averageEnergy} kWh/day</p>
+            <p>{overview.average_units} kWh/day</p>
           </div>
           <div className="card">
             <h3>Total Records</h3>
-            <p>{totalRecords}</p>
+            <p>{overview.total_rows}</p>
           </div>
           <div className="card info">
             <h3>Highest Consumption Month</h3>
-            <p>{highestMonth || "—"}</p>
+            <p>{overview.highest_month.month} ({overview.highest_month.units} kWh)</p>
           </div>
           <div className="card info">
             <h3>Lowest Consumption Month</h3>
-            <p>{lowestMonth || "—"}</p>
+            <p>{overview.lowest_month.month} ({overview.lowest_month.units} kWh)</p>
           </div>
           <div className="card highlight">
             <h3>Total Energy</h3>
-            <p>{totalEnergy} kWh</p>
+            <p>{overview.total_energy} kWh</p>
           </div>
         </div>
 
         {/* Daily Line Chart */}
         <div className="chart-section">
           <h3>📈 Daily Energy Usage Trend</h3>
-          {chartData.length > 0 ? (
+          {overview.daily_chart.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={chartData}>
+              <LineChart data={overview.daily_chart}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis
@@ -176,9 +120,9 @@ function Overview() {
         {/* Monthly Line Chart */}
         <div className="chart-section">
           <h3>📅 Monthly Energy Usage Trend</h3>
-          {monthlyData.length > 0 ? (
+          {overview.monthly_chart.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={monthlyData}>
+              <LineChart data={overview.monthly_chart}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis

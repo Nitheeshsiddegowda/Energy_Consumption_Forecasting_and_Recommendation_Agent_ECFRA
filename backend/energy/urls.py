@@ -2,7 +2,8 @@ from django.urls import path
 
 from .views import (
     DatasetUploadView,
-    DatasetPreviewView
+    DatasetPreviewView,
+    DatasetOverviewView,
 )
 
 urlpatterns = [
@@ -18,4 +19,10 @@ urlpatterns = [
         DatasetPreviewView.as_view(),
         name="preview"
     ),
+
+    path(
+        "datasets/<int:pk>/overview/",
+        DatasetOverviewView.as_view(),
+        name="overview"
+),
 ]
