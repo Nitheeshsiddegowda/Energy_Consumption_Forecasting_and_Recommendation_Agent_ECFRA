@@ -2,13 +2,20 @@ import React, { useState } from "react";
 import axios from "axios";
 import "../styles/dashboard.css";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
+  ReferenceLine,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 function ForecastingPage() {
@@ -16,15 +23,40 @@ function ForecastingPage() {
   const [days, setDays] = useState(7);
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [lineChartData, setLineChartData] = useState([]);
 
   const handleForecast = async () => {
     try {
       setLoading(true);
       const response = await axios.post(
         "http://127.0.0.1:8000/api/forecast/seasonal/",
-        { month, days }
+        { month, days },
       );
+
+      console.log(response.data);
+
       setForecast(response.data);
+      const chart = [];
+
+      // Historical data (Red)
+      response.data.historical.forEach((item) => {
+        chart.push({
+          date: item.date,
+          Actual: item.units,
+          Predicted: null,
+        });
+      });
+
+      // Forecast data (Green)
+      response.data.forecast.forEach((item) => {
+        chart.push({
+          date: item.date,
+          Actual: null,
+          Predicted: item.units,
+        });
+      });
+
+      setLineChartData(chart);
     } catch (error) {
       console.log(error);
       alert("Forecast generation failed.");
@@ -34,15 +66,29 @@ function ForecastingPage() {
   };
 
   const highestAppliance = forecast
-    ? forecast.appliances.reduce((max, item) => (item.units > max.units ? item : max))
+    ? forecast.appliances.reduce((max, item) =>
+        item.units > max.units ? item : max,
+      )
     : null;
 
   const lowestAppliance = forecast
-    ? forecast.appliances.reduce((min, item) => (item.units < min.units ? item : min))
+    ? forecast.appliances.reduce((min, item) =>
+        item.units < min.units ? item : min,
+      )
     : null;
 
+  const COLORS = [
+    "#2563eb",
+    "#16a34a",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+  ];
+
   return (
-    <div className="dashboard-container"  style={{paddingTop:"60px"}}>
+    <div className="dashboard-container" style={{ paddingTop: "60px" }}>
       <h1 className="dashboard-title">Energy Consumption Forecast</h1>
 
       <div className="top-controls">
@@ -86,7 +132,6 @@ function ForecastingPage() {
 
       {forecast && (
         <div className="forecast-results" style={{ marginTop: "30px" }}>
-          
           {/* Dashboard Summary Grid Using Your CSS Classes */}
           <div className="cards-grid">
             <div className="summary-card blue">
@@ -117,6 +162,45 @@ function ForecastingPage() {
 
           {/* Chart Section */}
           <div className="chart-card">
+            <h3>Historical vs Forecast Energy Consumption</h3>
+
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={lineChartData}>
+                <ReferenceLine
+                  x={forecast.historical[forecast.historical.length - 1]?.date}
+                  stroke="#000"
+                  strokeDasharray="5 5"
+                  label="Forecast Starts"
+                />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => [`${value} Units`, "Consumption"]}
+                />
+                <Legend />
+
+                <Line
+                  type="monotone"
+                  dataKey="Actual"
+                  stroke="#ef4444"
+                  strokeWidth={4}
+                  dot={false}
+                  name="Historical"
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="Predicted"
+                  stroke="#22c55e"
+                  strokeWidth={4}
+                  dot={false}
+                  name="Forecast"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-card">
             <h3>Appliance-wise Energy Consumption</h3>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={forecast.appliances}>
@@ -127,8 +211,68 @@ function ForecastingPage() {
                 <Bar dataKey="units" fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+            <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
+              Appliance Contribution
+            </h3>
 
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={forecast.appliances}
+                  dataKey="units"
+                  nameKey="name"
+                  outerRadius={120}
+                  label
+                >
+                  {forecast.appliances.map((entry, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+
+                <Tooltip />
+
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="chart-card">
+              <h2>🤖 AI Energy Recommendation</h2>
+
+              <div style={{ marginTop: "20px", lineHeight: "1.9" }}>
+                <p>
+                  <strong>Forecast Month:</strong> {month}
+                </p>
+
+                <p>
+                  <strong>Estimated Consumption:</strong>
+                  {forecast.total_units} Units
+                </p>
+
+                <p>
+                  <strong>Estimated Bill:</strong>₹{forecast.estimated_bill}
+                </p>
+
+                <p>
+                  <strong>Highest Consumer:</strong>
+
+                  {highestAppliance.name}
+                </p>
+
+                <hr style={{ margin: "15px 0" }} />
+
+                <h3>Recommendation</h3>
+
+                <ul>
+                  <li>Use Eco Mode for {highestAppliance.name}.</li>
+
+                  <li>Turn OFF appliances when not in use.</li>
+
+                  <li>Avoid peak-hour electricity usage.</li>
+
+                  <li>Regular maintenance can reduce energy usage.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
