@@ -20,7 +20,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend
+  Legend,
 );
 
 const DistributionPage = () => {
@@ -57,10 +57,7 @@ const DistributionPage = () => {
 
     const appliances = applianceCols.map((a) => ({
       label: a.name.split("(")[0],
-      total: rows.reduce(
-        (sum, row) => sum + parseFloat(row[a.index] || 0),
-        0
-      ),
+      total: rows.reduce((sum, row) => sum + parseFloat(row[a.index] || 0), 0),
     }));
 
     setApplianceData(appliances);
@@ -69,28 +66,48 @@ const DistributionPage = () => {
 
   const handleApplianceClick = (label) => {
     setSelectedAppliance(label);
+
     const header = dataset[0];
     const rows = dataset.slice(1);
 
-    const monthIdx = header.indexOf("Month");
+    const dateIdx = header.indexOf("Date");
     const appIdx = header.indexOf(`${label}(Units)`);
 
-    if (monthIdx === -1 || appIdx === -1) {
-      alert("Month or Appliance column missing!");
+    if (dateIdx === -1 || appIdx === -1) {
+      alert("Date or Appliance column missing!");
       return;
     }
 
+    // Group appliance usage by Year-Month
     const monthly = {};
+
     rows.forEach((row) => {
-      const month = row[monthIdx];
-      const val = parseFloat(row[appIdx] || 0);
-      monthly[month] = (monthly[month] || 0) + val;
+      const date = new Date(row[dateIdx]);
+
+      if (isNaN(date.getTime())) return;
+
+      const yearMonth = `${date.getFullYear()}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, "0")}`;
+
+      const units = parseFloat(row[appIdx]) || 0;
+
+      monthly[yearMonth] = (monthly[yearMonth] || 0) + units;
     });
 
-    const labels = Object.keys(monthly);
-    const values = Object.values(monthly);
+    // Sort months chronologically
+    const labels = Object.keys(monthly).sort();
 
-    setMonthWiseData({ labels, values });
+    const values = labels.map((month) => monthly[month]);
+
+    console.log(monthly);
+    console.log(labels);
+    console.log(values);
+
+    setMonthWiseData({
+      labels,
+      values,
+    });
   };
 
   const prepareStackedData = (header, rows, applianceCols) => {
@@ -103,7 +120,7 @@ const DistributionPage = () => {
         const filtered = rows.filter((r) => r[monthIdx] === m);
         return filtered.reduce(
           (sum, r) => sum + parseFloat(r[col.index] || 0),
-          0
+          0,
         );
       });
 
@@ -156,7 +173,10 @@ const DistributionPage = () => {
                 legend: { display: false },
               },
               scales: {
-                y: { beginAtZero: true, title: { display: true, text: "Units" } },
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: "Units" },
+                },
               },
             }}
           />
@@ -197,21 +217,37 @@ const DistributionPage = () => {
                 labels: monthWiseData.labels,
                 datasets: [
                   {
-                    label: `${selectedAppliance} (Units)`,
+                    label: `${selectedAppliance} Energy (Units)`,
                     data: monthWiseData.values,
-                    borderColor: "#2c3e50",
-                    backgroundColor: "rgba(44,62,80,0.3)",
+                    borderColor: "#2563eb",
+                    backgroundColor: "rgba(37,99,235,0.15)",
                     fill: true,
-                    tension: 0.2,
+                    tension: 0.35,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                   },
                 ],
               }}
               options={{
                 responsive: true,
+                plugins: {
+                  legend: {
+                    display: true,
+                  },
+                },
                 scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: "Month",
+                    },
+                  },
                   y: {
                     beginAtZero: true,
-                    title: { display: true, text: "Units" },
+                    title: {
+                      display: true,
+                      text: "Energy (Units)",
+                    },
                   },
                 },
               }}

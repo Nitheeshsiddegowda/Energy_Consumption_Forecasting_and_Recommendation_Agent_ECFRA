@@ -55,7 +55,8 @@ class DatasetPreviewView(APIView):
 
                 "preview": df.head(10).to_dict(
                     orient="records"
-                )
+                ),
+                "full_dataset": df.to_dict(orient="records")
 
             })
 
