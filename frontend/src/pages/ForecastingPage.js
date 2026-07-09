@@ -36,6 +36,7 @@ function ForecastingPage() {
       console.log(response.data);
 
       setForecast(response.data);
+      localStorage.setItem("dashboardForecast", JSON.stringify(response.data));
       const chart = [];
 
       // Historical data (Red)
@@ -86,6 +87,16 @@ function ForecastingPage() {
     "#06b6d4",
     "#ec4899",
   ];
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case "High":
+        return "#ef4444";
+      case "Medium":
+        return "#f59e0b";
+      default:
+        return "#22c55e";
+    }
+  };
 
   return (
     <div className="dashboard-container" style={{ paddingTop: "60px" }}>
@@ -170,7 +181,10 @@ function ForecastingPage() {
                   x={forecast.historical[forecast.historical.length - 1]?.date}
                   stroke="#000"
                   strokeDasharray="5 5"
-                  label="Forecast Starts"
+                  label={{
+                    value: "Forecast Starts",
+                    position: "top",
+                  }}
                 />
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
@@ -211,6 +225,81 @@ function ForecastingPage() {
                 <Bar dataKey="units" fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
+            {/* ================= Recommendations ================= */}
+
+            {forecast?.recommendations?.length > 0 && (
+              <div
+                style={{
+                  marginTop: "40px",
+                }}
+              >
+                <h2
+                  style={{
+                    marginBottom: "20px",
+                  }}
+                >
+                  🤖 AI Recommendations
+                </h2>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+                    gap: "20px",
+                  }}
+                >
+                  {forecast.recommendations.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: "#ffffff",
+
+                        padding: "20px",
+
+                        borderRadius: "12px",
+
+                        boxShadow: "0 5px 15px rgba(0,0,0,.12)",
+
+                        borderLeft:
+                          "6px solid ${getSeverityColor(item.severity)}",
+                      }}
+                    >
+                      <h3>
+                        {item.icon} {item.title}
+                      </h3>
+
+                      <p>
+                        <strong>Severity:</strong> {item.severity}
+                      </p>
+
+                      <p>
+                        <strong>Contribution:</strong> {item.percentage}%
+                      </p>
+
+                      <p
+                        style={{
+                          marginTop: "10px",
+
+                          lineHeight: "1.7",
+                        }}
+                      >
+                        {item.message}
+                      </p>
+
+                      <hr />
+
+                      <p>
+                        <b>Estimated Saving :</b>
+                      </p>
+
+                      <p>⚡ {item.saving_units} Units</p>
+
+                      <p>💰 ₹ {item.saving_bill}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
               Appliance Contribution
             </h3>

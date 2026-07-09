@@ -1,53 +1,66 @@
 import pandas as pd
 import joblib
-from datetime import timedelta
+from .recommendation_engine import generate_recommendations
 
 def generate_forecast(df, month, days):
-    # Filter dataset for selected month
-    monthly_df = df[df["Month"] == month]
-    
-    # Shuffle month records so forecast isn't always identical
-    monthly_df = (
-        monthly_df
-        .sample(frac=1, random_state=42)
-        .reset_index(drop=True)
-    )
+
+    # ----------------------------
+    # Filter selected month
+    # ----------------------------
+    monthly_df = df[df["Month"] == month].copy()
+
+    if monthly_df.empty:
+        raise Exception("No data available for selected month.")
+
+    # Convert Date column to datetime
+    monthly_df["Date"] = pd.to_datetime(monthly_df["Date"])
+
+    # Historical data (sorted)
     historical_df = (
-        df[df["Month"] == month]
+        monthly_df
         .sort_values("Date")
         .tail(30)
     )
+
+    # Prediction data (shuffled)
     prediction_df = (
         monthly_df
         .sample(frac=1, random_state=42)
         .reset_index(drop=True)
     )
 
-    if monthly_df.empty:
-        raise Exception("No data available for selected month.")
-
-    # Load trained XGBoost model
+    # ----------------------------
+    # Load Model
+    # ----------------------------
     model = joblib.load("forecast/xgboost.pkl")
-    
-    # FIX: "historical_df" was undefined here. We use the main "df" or "monthly_df" 
-    # to extract the last valid date context. Assuming "df" has chronological dates.
-    last_date = pd.to_datetime(df.iloc[-1]["Date"])
-    
-    forecast = []
-    total_units = 0
 
-    # Explicit list of feature names to guarantee column order for XGBoost
     feature_columns = [
-        "Temperature", "Fan", "Refrigerator", "AirConditioner", 
-        "Bulb", "Television", "Monitor", "MotorPump", 
-        "Month", "Extra", "TariffRate"
+        "Temperature",
+        "Fan",
+        "Refrigerator",
+        "AirConditioner",
+        "Bulb",
+        "Television",
+        "Monitor",
+        "MotorPump",
+        "Month",
+        "Extra",
+        "TariffRate"
     ]
 
-    for i in range(days):
-        row = monthly_df.iloc[i % len(monthly_df)]
-        prediction_df.iloc[i % len(prediction_df)]
+    forecast = []
 
-        features_dict = {
+    total_units = 0
+
+    # ----------------------------
+    # Predict each day
+    # ----------------------------
+    for i in range(days):
+
+        row = prediction_df.iloc[i % len(prediction_df)]
+
+        features = pd.DataFrame([{
+
             "Temperature": row["Temperature"],
             "Fan": row["Fan"],
             "Refrigerator": row["Refrigerator"],
@@ -59,25 +72,28 @@ def generate_forecast(df, month, days):
             "Month": month,
             "Extra": row["Extra"],
             "TariffRate": row["TariffRate"]
-        }
-        
-        # Create DataFrame and ensure precise column order matching model expectations
-        features = pd.DataFrame([features_dict])[feature_columns]
+
+        }])[feature_columns]
 
         prediction = float(model.predict(features)[0])
+
         total_units += prediction
 
-        # FIX: Cleaned up the broken syntax loop entirely
-        future_date = last_date + timedelta(days=i + 1)
         forecast.append({
-            "date": future_date.strftime("%Y-%m-%d"),
+
+            "date": f"Day {i + 1}",
+
             "units": round(prediction, 2)
+
         })
 
     total_units = round(total_units, 2)
+
     daily_units = round(total_units / days, 2)
 
-    # Appliance-wise forecast
+    # ----------------------------
+    # Appliance Forecast
+    # ----------------------------
     appliances = [
         ("Fan", "Fan(Units)"),
         ("Refrigerator", "Fridge(Units)"),
@@ -89,35 +105,61 @@ def generate_forecast(df, month, days):
     ]
 
     appliance_forecast = []
+
     for name, column in appliances:
-        units = round(monthly_df[column].mean() * days, 2)
+
         appliance_forecast.append({
+
             "name": name,
-            "units": units
+
+            "units": round(monthly_df[column].mean() * days, 2)
+
         })
 
     tariff_rate = monthly_df["TariffRate"].mean()
-    estimated_bill = round(total_units * tariff_rate, 2)
 
-    # -------------------------------
-    # Historical Data (Last 30 Records)
-    # -------------------------------
-    historical_df = monthly_df.tail(30)
+    estimated_bill = round(
+        total_units * tariff_rate,
+        2
+    )
+    recommendations = generate_recommendations(
+        appliance_forecast,
+        tariff_rate
+    )
+
+    # ----------------------------
+    # Historical
+    # ----------------------------
     historical = []
 
     for _, row in historical_df.iterrows():
+
         historical.append({
-            "date": str(row["Date"]),
+
+            "date": row["Date"].strftime("%Y-%m-%d"),
+
             "units": round(float(row["Units"]), 2)
+
         })
 
     return {
+
         "month": month,
+
         "days": days,
-        "daily_units": round(daily_units, 2),
+
+        "daily_units": daily_units,
+
         "total_units": total_units,
+
         "estimated_bill": estimated_bill,
+
         "appliances": appliance_forecast,
+
         "historical": historical,
-        "forecast": forecast
+
+        "forecast": forecast,
+
+        "recommendations": recommendations
+
     }

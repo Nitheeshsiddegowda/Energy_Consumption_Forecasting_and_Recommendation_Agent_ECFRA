@@ -7,7 +7,6 @@ import ForecastingPage from "./pages/ForecastingPage";
 import DistributionPage from "./pages/DistributionPage";
 import Overview from "./pages/Overview";
 import Dataset from "./pages/Dataset";
-import RecommendationPage from "./pages/RecommendationPage";
 import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 function App() {
@@ -22,7 +21,6 @@ function App() {
             <Route path="/overview" element={<Overview />} />
             <Route path="/distribution" element={<DistributionPage />} />
             <Route path="/forecasting" element={<ForecastingPage />} />
-            <Route path="/recommendation" element={<RecommendationPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </div>

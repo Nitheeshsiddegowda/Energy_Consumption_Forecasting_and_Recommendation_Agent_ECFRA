@@ -20,7 +20,6 @@ const Sidebar = () => {
           <li><Link to="/overview" onClick={() => setIsOpen(false)}>Overview</Link></li>
           <li><Link to="/distribution" onClick={() => setIsOpen(false)}>Distribution</Link></li>
           <li><Link to="/forecasting" onClick={() => setIsOpen(false)}>Forecasting</Link></li>
-          <li><Link to="/recommendation" onClick={() => setIsOpen(false)}>Recommendation</Link></li>
           <li><a href="/dashboard">Dashboard</a></li>
         </ul>
       </nav>

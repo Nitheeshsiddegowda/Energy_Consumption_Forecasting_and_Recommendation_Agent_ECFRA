@@ -1,150 +1,177 @@
 import React, { useEffect, useState } from "react";
-import "../styles/style.css";
+import "../styles/dashboard.css";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
 function Dashboard() {
-  const [summary, setSummary] = useState({
-    totalEnergy: 0,
-    averageEnergy: 0,
-    highestMonth: "",
-    lowestMonth: "",
-    forecastDays: 0,
-  });
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const stored = localStorage.getItem("dataset");
-        if (!stored) {
-          setLoading(false);
-          return;
-        }
+    const saved = localStorage.getItem("dashboardForecast");
 
-        const data = JSON.parse(stored);
-        const header = data[0];
-        const rows = data.slice(1);
-        const dateIndex = 0;
-        const unitsIndex = header.indexOf("Units");
-
-        if (unitsIndex === -1) return;
-
-        let totalEnergy = 0;
-        const monthlyUsage = {};
-
-        rows.forEach((row) => {
-          const date = new Date(row[dateIndex]);
-          const units = parseFloat(row[unitsIndex]);
-          if (!isNaN(units)) {
-            totalEnergy += units;
-            const month = date.toLocaleString("default", { month: "short", year: "numeric" });
-            monthlyUsage[month] = (monthlyUsage[month] || 0) + units;
-          }
-        });
-
-        const months = Object.entries(monthlyUsage);
-        const highest = months.reduce((a, b) => (a[1] > b[1] ? a : b), ["", 0]);
-        const lowest = months.reduce((a, b) => (a[1] < b[1] ? a : b), ["", 0]);
-
-        // Fetch forecast data if available
-        const forecastRes = await fetch("http://127.0.0.1:5000/forecast");
-        const forecastData = await forecastRes.json();
-
-        // Fetch recommendations
-        const recRes = await fetch("http://127.0.0.1:5000/recommendations");
-        const recData = await recRes.json();
-
-        setSummary({
-          totalEnergy: totalEnergy.toFixed(2),
-          averageEnergy: (totalEnergy / months.length).toFixed(2),
-          highestMonth: `${highest[0]} (${highest[1].toFixed(2)} kWh)`,
-          lowestMonth: `${lowest[0]} (${lowest[1].toFixed(2)} kWh)`,
-          forecastDays: forecastData.forecast ? forecastData.forecast.length : 0,
-        });
-
-        setRecommendations(recData.recommendations || []);
-        setLoading(false);
-      } catch (err) {
-        console.error("Dashboard Error:", err);
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    if (saved) {
+      setData(JSON.parse(saved));
+    }
   }, []);
 
+  if (!data) {
+    return (
+      <div className="dashboard-container">
+        <h2>⚡ Energy Dashboard</h2>
+        <p>No forecast generated yet.</p>
+        <p>Please generate a forecast first.</p>
+      </div>
+    );
+  }
+
+  const highest = data.appliances.reduce((a, b) => (a.units > b.units ? a : b));
+
   return (
-    <div className="page-container">
-      {/* Sidebar */}
-      <nav className="sidebar">
-        <ul>
-          <li><a href="/dataset">Dataset Upload</a></li>
-          <li><a href="/overview">Overview</a></li>
-          <li><a href="/distribution">Distribution</a></li>
-          <li><a href="/forecasting">Forecasting</a></li>
-          <li><a href="/recommendation">Recommendation</a></li>
-          <li><a href="/dashboard" className="active">Dashboard</a></li>
-        </ul>
-      </nav>
+    <div className="dashboard-container">
+      <h1 className="dashboard-title">⚡ Energy Consumption Dashboard</h1>
 
-      {/* Main Dashboard */}
-      <main className="overview-main">
-        <h2 className="overview-title">📊 Energy Analytics Dashboard</h2>
+      <div className="cards-grid">
+        <div className="summary-card blue">
+          <h3>Total Units</h3>
+          <h2>{data.total_units}</h2>
+        </div>
 
-        {loading ? (
-          <p>Loading insights...</p>
-        ) : (
-          <>
-            {/* Summary Cards */}
-            <div className="summary-container">
-              <div className="card highlight">
-                <h3>Total Energy Used</h3>
-                <p>{summary.totalEnergy} kWh</p>
-              </div>
-              <div className="card">
-                <h3>Average Energy per Month</h3>
-                <p>{summary.averageEnergy} kWh</p>
-              </div>
-              <div className="card">
-                <h3>Highest Consumption</h3>
-                <p>{summary.highestMonth}</p>
-              </div>
-              <div className="card">
-                <h3>Lowest Consumption</h3>
-                <p>{summary.lowestMonth}</p>
-              </div>
-              <div className="card">
-                <h3>Forecasted Days</h3>
-                <p>{summary.forecastDays}</p>
-              </div>
+        <div className="summary-card green">
+          <h3>Estimated Bill</h3>
+          <h2>₹ {data.estimated_bill}</h2>
+        </div>
+
+        <div className="summary-card orange">
+          <h3>Recommendations</h3>
+          <h2>{data.recommendations.length}</h2>
+        </div>
+
+        <div className="summary-card teal">
+          <h3>Highest Consumer</h3>
+          <h2>{highest.name}</h2>
+        </div>
+      </div>
+      <div className="chart-card">
+        <h2>📈 Forecast Trend</h2>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data.forecast}>
+            <CartesianGrid strokeDasharray="3 3" />
+
+            <XAxis dataKey="date" />
+
+            <YAxis />
+
+            <Tooltip />
+
+            <Line
+              type="monotone"
+              dataKey="units"
+              stroke="#2563eb"
+              strokeWidth={3}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="chart-card">
+        <h2>🤖 Top Recommendations</h2>
+
+        {data.recommendations.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              marginTop: "15px",
+              padding: "15px",
+              borderRadius: "10px",
+              background: "#f5f5f5",
+            }}
+          >
+            <h3>
+              {item.icon} {item.title}
+            </h3>
+
+            <p>{item.message}</p>
+
+            <p>
+              ⚡ Save <b>{item.saving_units}</b> Units
+            </p>
+
+            <p>
+              💰 Save <b>₹ {item.saving_bill}</b>
+            </p>
+          </div>
+        ))}
+        <div className="chart-card">
+          <h2>📅 Last Forecast</h2>
+
+          <div className="cards-grid">
+            <div className="summary-card blue">
+              <h3>Forecast Month</h3>
+
+              <h2>{data.month}</h2>
             </div>
 
-            {/* Recommendations Summary */}
-            <div className="chart-section">
-              <h3>💡 Key Energy Recommendations</h3>
-              {recommendations.length > 0 ? (
-                <ul style={{ listStyle: "none", padding: 0 }}>
-                  {recommendations.slice(0, 5).map((rec, i) => (
-                    <li
-                      key={i}
-                      style={{
-                        marginBottom: "12px",
-                        background: "#f9fafb",
-                        padding: "10px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <strong>{rec.device}:</strong> {rec.message}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No recommendations available.</p>
-              )}
+            <div className="summary-card green">
+              <h3>Forecast Period</h3>
+
+              <h2>{data.days} Days</h2>
             </div>
-          </>
-        )}
-      </main>
+
+            <div className="summary-card orange">
+              <h3>Daily Average</h3>
+
+              <h2>{data.daily_units} Units</h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h2>📊 Appliance Summary</h2>
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: "20px",
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  background: "#2563eb",
+                  color: "white",
+                }}
+              >
+                <th style={{ padding: "12px" }}>Appliance</th>
+
+                <th style={{ padding: "12px" }}>Units</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {data.appliances.map((item, index) => (
+                <tr
+                  key={index}
+                  style={{
+                    borderBottom: "1px solid #ddd",
+                  }}
+                >
+                  <td style={{ padding: "10px" }}>{item.name}</td>
+
+                  <td style={{ padding: "10px" }}>{item.units}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
