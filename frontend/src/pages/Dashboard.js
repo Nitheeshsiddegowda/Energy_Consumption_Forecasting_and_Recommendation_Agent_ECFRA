@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "../styles/dashboard.css";
+import { Navigate } from "react-router-dom";
 
 import {
   ResponsiveContainer,
@@ -19,9 +20,21 @@ function Dashboard() {
   const [distribution, setDistribution] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
-  const months = [ "", "January", "February", "March", "April",
-              "May", "June", "July", "August", "September", "October",
-              "November", "December", ];
+  const months = [
+    "",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   useEffect(() => {
     loadDashboard();
@@ -49,7 +62,7 @@ function Dashboard() {
 
       setForecast(latestForecast);
     } catch (err) {
-      console.log(err);
+      ;
     } finally {
       setLoading(false);
     }
@@ -67,10 +80,9 @@ function Dashboard() {
     );
   }
 
-  const highest = forecast.appliances.reduce((a, b) =>
-    a.units > b.units ? a : b,
-  );
-
+  if (!localStorage.getItem("access")) {
+    return <Navigate to="/login" replace />;
+  }
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-title">⚡⚡ Smart Energy Analytics Dashboard</h1>
@@ -168,10 +180,7 @@ function Dashboard() {
         <h2>🤖 Top Recommendations</h2>
 
         {forecast.recommendations.slice(0, 3).map((item, index) => (
-          <div
-            key={index}
-            className="recommendation-card"
-          >
+          <div key={index} className="recommendation-card">
             <h3>
               {item.icon} {item.title}
             </h3>
@@ -193,7 +202,7 @@ function Dashboard() {
           <div className="cards-grid">
             <div className="summary-card blue">
               <h3>Forecast Month</h3>
-        
+
               <h2>{months[forecast.month]}</h2>
             </div>
 
@@ -219,6 +228,7 @@ function Dashboard() {
       </div>
     </div>
   );
+  <footer className="footer">Smart Energy Analytics System © 2026</footer>;
 }
 
 export default Dashboard;

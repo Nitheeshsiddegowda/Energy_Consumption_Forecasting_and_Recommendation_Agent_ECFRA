@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "../styles/dashboard.css";
+import { Navigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -97,6 +98,9 @@ function ForecastingPage() {
         return "#22c55e";
     }
   };
+  if (!localStorage.getItem("access")) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="dashboard-container" style={{ paddingTop: "60px" }}>
@@ -260,21 +264,12 @@ function ForecastingPage() {
 
                         boxShadow: "0 5px 15px rgba(0,0,0,.12)",
 
-                        borderLeft:
-                          "6px solid ${getSeverityColor(item.severity)}",
+                        borderLeft:`6px solid ${getSeverityColor(item.severity)}`,
                       }}
                     >
                       <h3>
                         {item.icon} {item.title}
                       </h3>
-
-                      <p>
-                        <strong>Severity:</strong> {item.severity}
-                      </p>
-
-                      <p>
-                        <strong>Contribution:</strong> {item.percentage}%
-                      </p>
 
                       <p
                         style={{
@@ -288,13 +283,11 @@ function ForecastingPage() {
 
                       <hr />
 
-                      <p>
-                        <b>Estimated Saving :</b>
-                      </p>
+                      <h4>Estimated Saving</h4>
 
-                      <p>⚡ {item.saving_units} Units</p>
+                      <p>⚡ Energy : {item.saving_units} Units</p>
 
-                      <p>💰 ₹ {item.saving_bill}</p>
+                      <p>💰 Cost : ₹{item.saving_bill}</p>
                     </div>
                   ))}
                 </div>
@@ -366,6 +359,8 @@ function ForecastingPage() {
       )}
     </div>
   );
+  <footer className="footer">Smart Energy Analytics System © 2026</footer>;
 }
+
 
 export default ForecastingPage;

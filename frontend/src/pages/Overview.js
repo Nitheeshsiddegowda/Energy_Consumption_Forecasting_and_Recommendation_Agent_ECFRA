@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "../styles/style.css";
+import { Navigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -35,7 +36,9 @@ function Overview() {
   if (!overview) {
     return <h2>Loading...</h2>;
   }
-
+  if (!localStorage.getItem("access")) {
+  return <Navigate to="/login" replace />;
+}
   return (
     <div className="page-container">
       {/* Sidebar */}
@@ -159,6 +162,7 @@ function Overview() {
       </main>
     </div>
   );
+  <footer className="footer">Smart Energy Analytics System © 2026</footer>;
 }
 
 export default Overview;

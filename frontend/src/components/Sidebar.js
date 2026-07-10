@@ -16,16 +16,51 @@ const Sidebar = () => {
       <nav className={`sidebar ${isOpen ? "open" : "closed"}`}>
         <h2 className="sidebar-title">⚡ Energy Agent</h2>
         <ul>
-          <li><Link to="/dataset" onClick={() => setIsOpen(false)}>Dataset Upload</Link></li>
-          <li><Link to="/overview" onClick={() => setIsOpen(false)}>Overview</Link></li>
-          <li><Link to="/distribution" onClick={() => setIsOpen(false)}>Distribution</Link></li>
-          <li><Link to="/forecasting" onClick={() => setIsOpen(false)}>Forecasting</Link></li>
-          <li><a href="/dashboard">Dashboard</a></li>
+          <li>
+            <Link to="/dataset" onClick={() => setIsOpen(false)}>
+              Dataset Upload
+            </Link>
+          </li>
+          <li>
+            <Link to="/overview" onClick={() => setIsOpen(false)}>
+              Overview
+            </Link>
+          </li>
+          <li>
+            <Link to="/distribution" onClick={() => setIsOpen(false)}>
+              Distribution
+            </Link>
+          </li>
+          <li>
+            <Link to="/forecasting" onClick={() => setIsOpen(false)}>
+              Forecasting
+            </Link>
+          </li>
+          <li>
+            <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+              Dashboard
+            </Link>
+          </li>
+          <button
+            className="logout-btn"
+            onClick={() => {
+              localStorage.removeItem("access");
+              localStorage.removeItem("refresh");
+              localStorage.removeItem("loggedIn");
+              localStorage.removeItem("datasetId");
+              localStorage.removeItem("dashboardForecast");
+              window.location = "/login";
+            }}
+          >
+            🚪 Logout
+          </button>
         </ul>
       </nav>
 
       {/* Page overlay when sidebar is open */}
-      {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
+      {isOpen && (
+        <div className="overlay" onClick={() => setIsOpen(false)}></div>
+      )}
     </>
   );
 };

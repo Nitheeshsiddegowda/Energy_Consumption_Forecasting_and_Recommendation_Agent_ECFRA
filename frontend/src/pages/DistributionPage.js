@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import "../styles/dashboard.css";
 import { Bar, Line } from "react-chartjs-2";
+import { Navigate } from "react-router-dom";
 import {
   Chart as ChartJS,
   BarElement,
@@ -100,9 +101,7 @@ const DistributionPage = () => {
 
     const values = labels.map((month) => monthly[month]);
 
-    console.log(monthly);
-    console.log(labels);
-    console.log(values);
+
 
     setMonthWiseData({
       labels,
@@ -133,6 +132,9 @@ const DistributionPage = () => {
 
     setStackedData({ labels: months, datasets });
   };
+  if (!localStorage.getItem("access")) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="page-container" style={{ padding: "20px" }}>
@@ -321,6 +323,7 @@ const DistributionPage = () => {
       )}
     </div>
   );
+  <footer className="footer">Smart Energy Analytics System © 2026</footer>;
 };
 
 export default DistributionPage;

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "../styles/style.css";
+import { Navigate } from "react-router-dom";
 
 const Dataset = () => {
   const [preview, setPreview] = useState([]);
   const [columns, setColumns] = useState([]);
+  const [uploadedName, setUploadedName] = useState("");
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -46,12 +48,16 @@ const Dataset = () => {
       localStorage.setItem("dataset", JSON.stringify(datasetArray));
 
       alert("Dataset Uploaded Successfully");
+      setUploadedName(file.name);
     } catch (err) {
-      console.log(err);
+  
 
       alert("Upload Failed");
     }
   };
+  if (!localStorage.getItem("access")) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="content">
@@ -75,11 +81,18 @@ const Dataset = () => {
         <input type="file" accept=".csv" onChange={handleUpload} />
       </div>
 
-      <input type="file" accept=".csv" onChange={handleUpload} />
-
       <br />
       <br />
-
+      {uploadedName && (
+        <div className="upload-success">
+          ✅ Dataset Uploaded Successfully
+          <br />
+          <span>{uploadedName}</span>
+        </div>
+      )}
+      <h3 style={{ marginBottom: "15px" }}>
+        Showing first 10 rows of uploaded dataset
+      </h3>
       {preview.length > 0 && (
         <table className="preview-table">
           <thead>
@@ -103,6 +116,7 @@ const Dataset = () => {
       )}
     </div>
   );
+  <footer className="footer">Smart Energy Analytics System © 2026</footer>;
 };
 
 export default Dataset;
