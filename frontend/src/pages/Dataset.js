@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "../styles/style.css";
 
 const Dataset = () => {
   const [preview, setPreview] = useState([]);
@@ -26,6 +27,7 @@ const Dataset = () => {
       );
 
       const id = upload.data.id;
+      localStorage.setItem("datasetId", id);
 
       const previewData = await axios.get(
         `http://127.0.0.1:8000/api/energy/datasets/${id}/preview/`,
@@ -42,7 +44,6 @@ const Dataset = () => {
       ];
 
       localStorage.setItem("dataset", JSON.stringify(datasetArray));
-      
 
       alert("Dataset Uploaded Successfully");
     } catch (err) {
@@ -54,7 +55,25 @@ const Dataset = () => {
 
   return (
     <div className="content">
-      <h2>Upload Dataset</h2>
+      <div
+        style={{
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
+          boxShadow: "0 5px 15px rgba(0,0,0,.08)",
+          marginBottom: "20px",
+          textAlign: "center",
+        }}
+      >
+        <h2>📂 Upload Energy Dataset</h2>
+
+        <p>
+          Upload your CSV dataset to perform energy analysis, forecasting and
+          recommendations.
+        </p>
+
+        <input type="file" accept=".csv" onChange={handleUpload} />
+      </div>
 
       <input type="file" accept=".csv" onChange={handleUpload} />
 
@@ -62,7 +81,7 @@ const Dataset = () => {
       <br />
 
       {preview.length > 0 && (
-        <table border="1">
+        <table className="preview-table">
           <thead>
             <tr>
               {columns.map((col) => (

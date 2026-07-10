@@ -15,49 +15,54 @@ function Overview() {
   const [overview, setOverview] = useState(null);
 
   useEffect(() => {
-
     fetchOverview();
-
   }, []);
 
   const fetchOverview = async () => {
-
     try {
+      const datasetId = localStorage.getItem("datasetId");
 
-        const response = await axios.get(
-            "http://127.0.0.1:8000/api/energy/datasets/1/overview/"
-        );
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/energy/datasets/${datasetId}/overview/`,
+      );
 
-        setOverview(response.data);
-
+      setOverview(response.data);
+    } catch (error) {
+      console.error(error);
     }
-
-    catch (error) {
-
-        console.error(error);
-
-    }
-
   };
 
   if (!overview) {
-      return <h2>Loading...</h2>;
+    return <h2>Loading...</h2>;
   }
-  
 
   return (
     <div className="page-container">
       {/* Sidebar */}
-      <nav className="sidebar">
+      {/* <nav className="sidebar">
         <ul>
-          <li><a href="/dataset">Dataset Upload</a></li>
-          <li><a href="/overview" className="active">Overview</a></li>
-          <li><a href="/distribution">Distribution</a></li>
-          <li><a href="/forecasting">Forecasting</a></li>
-          <li><a href="/recommendation">Recommendation</a></li>
-          <li><a href="/prediction">Prediction</a></li>
+          <li>
+            <a href="/dataset">Dataset Upload</a>
+          </li>
+          <li>
+            <a href="/overview" className="active">
+              Overview
+            </a>
+          </li>
+          <li>
+            <a href="/distribution">Distribution</a>
+          </li>
+          <li>
+            <a href="/forecasting">Forecasting</a>
+          </li>
+          <li>
+            <a href="/recommendation">Recommendation</a>
+          </li>
+          <li>
+            <a href="/prediction">Prediction</a>
+          </li>
         </ul>
-      </nav>
+      </nav> */}
 
       {/* Main Content */}
       <main className="overview-main">
@@ -75,11 +80,16 @@ function Overview() {
           </div>
           <div className="card info">
             <h3>Highest Consumption Month</h3>
-            <p>{overview.highest_month.month} ({overview.highest_month.units} kWh)</p>
+            <p>
+              {overview.highest_month.month} ({overview.highest_month.units}{" "}
+              kWh)
+            </p>
           </div>
           <div className="card info">
             <h3>Lowest Consumption Month</h3>
-            <p>{overview.lowest_month.month} ({overview.lowest_month.units} kWh)</p>
+            <p>
+              {overview.lowest_month.month} ({overview.lowest_month.units} kWh)
+            </p>
           </div>
           <div className="card highlight">
             <h3>Total Energy</h3>

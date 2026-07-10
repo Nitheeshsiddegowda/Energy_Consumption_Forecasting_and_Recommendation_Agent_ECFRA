@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "../styles/dashboard.css";
+
 import {
   ResponsiveContainer,
   LineChart,
@@ -8,64 +10,104 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  BarChart,
+  Bar,
 } from "recharts";
 
 function Dashboard() {
-  const [data, setData] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [distribution, setDistribution] = useState(null);
+  const [forecast, setForecast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const months = [ "", "January", "February", "March", "April",
+              "May", "June", "July", "August", "September", "October",
+              "November", "December", ];
 
   useEffect(() => {
-    const saved = localStorage.getItem("dashboardForecast");
-
-    if (saved) {
-      setData(JSON.parse(saved));
-    }
+    loadDashboard();
   }, []);
 
-  if (!data) {
+  const loadDashboard = async () => {
+    try {
+      const datasetId = localStorage.getItem("datasetId");
+
+      const overviewRes = await axios.get(
+        `http://127.0.0.1:8000/api/energy/datasets/${datasetId}/overview/`,
+      );
+
+      const distributionRes = await axios.get(
+        `http://127.0.0.1:8000/api/energy/datasets/${datasetId}/distribution/`,
+      );
+
+      setOverview(overviewRes.data);
+
+      setDistribution(distributionRes.data);
+
+      const latestForecast = JSON.parse(
+        localStorage.getItem("dashboardForecast"),
+      );
+
+      setForecast(latestForecast);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <h2>Loading Dashboard...</h2>;
+  }
+
+  if (!overview) {
     return (
       <div className="dashboard-container">
-        <h2>⚡ Energy Dashboard</h2>
-        <p>No forecast generated yet.</p>
-        <p>Please generate a forecast first.</p>
+        <h2>No Dataset Uploaded</h2>
       </div>
     );
   }
 
-  const highest = data.appliances.reduce((a, b) => (a.units > b.units ? a : b));
+  const highest = forecast.appliances.reduce((a, b) =>
+    a.units > b.units ? a : b,
+  );
 
   return (
     <div className="dashboard-container">
-      <h1 className="dashboard-title">⚡ Energy Consumption Dashboard</h1>
+      <h1 className="dashboard-title">⚡⚡ Smart Energy Analytics Dashboard</h1>
 
       <div className="cards-grid">
         <div className="summary-card blue">
-          <h3>Total Units</h3>
-          <h2>{data.total_units}</h2>
+          <h3>Total Records</h3>
+
+          <h2>{overview.total_rows}</h2>
         </div>
 
         <div className="summary-card green">
-          <h3>Estimated Bill</h3>
-          <h2>₹ {data.estimated_bill}</h2>
+          <h3>Total Energy</h3>
+
+          <h2>{overview.total_energy} Units</h2>
         </div>
 
         <div className="summary-card orange">
-          <h3>Recommendations</h3>
-          <h2>{data.recommendations.length}</h2>
+          <h3>Average Units</h3>
+
+          <h2>{overview.average_units} Units</h2>
         </div>
 
         <div className="summary-card teal">
-          <h3>Highest Consumer</h3>
-          <h2>{highest.name}</h2>
+          <h3>Average Bill</h3>
+
+          <h2>₹ {overview.average_bill}</h2>
         </div>
       </div>
       <div className="chart-card">
-        <h2>📈 Forecast Trend</h2>
+        <h2>📈 Monthly Energy Consumption</h2>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data.forecast}>
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={overview.monthly_chart}>
             <CartesianGrid strokeDasharray="3 3" />
 
-            <XAxis dataKey="date" />
+            <XAxis dataKey="month" />
 
             <YAxis />
 
@@ -79,19 +121,56 @@ function Dashboard() {
             />
           </LineChart>
         </ResponsiveContainer>
+        <div className="chart-card">
+          <h2>📊 Dataset Insights</h2>
+
+          <div className="cards-grid">
+            <div className="summary-card blue">
+              <h3>Highest Month</h3>
+              <h2>{overview.highest_month.month}</h2>
+              <p>{overview.highest_month.units} Units</p>
+            </div>
+
+            <div className="summary-card green">
+              <h3>Lowest Month</h3>
+              <h2>{overview.lowest_month.month}</h2>
+              <p>{overview.lowest_month.units} Units</p>
+            </div>
+
+            <div className="summary-card orange">
+              <h3>Average Temperature</h3>
+              <h2>{overview.average_temperature} °C</h2>
+            </div>
+
+            <div className="summary-card teal">
+              <h3>Missing Values</h3>
+              <h2>{overview.missing_values}</h2>
+            </div>
+          </div>
+        </div>
+        <div className="chart-card">
+          <h2>🏆 Appliance Consumption</h2>
+
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart layout="vertical" data={distribution.appliance_chart}>
+              <XAxis type="number" />
+
+              <YAxis type="category" dataKey="name" />
+
+              <Tooltip />
+
+              <Bar dataKey="units" fill="#2563eb" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <div className="chart-card">
         <h2>🤖 Top Recommendations</h2>
 
-        {data.recommendations.map((item, index) => (
+        {forecast.recommendations.slice(0, 3).map((item, index) => (
           <div
             key={index}
-            style={{
-              marginTop: "15px",
-              padding: "15px",
-              borderRadius: "10px",
-              background: "#f5f5f5",
-            }}
+            className="recommendation-card"
           >
             <h3>
               {item.icon} {item.title}
@@ -109,67 +188,33 @@ function Dashboard() {
           </div>
         ))}
         <div className="chart-card">
-          <h2>📅 Last Forecast</h2>
+          <h2>🔮 Latest Forecast Summary</h2>
 
           <div className="cards-grid">
             <div className="summary-card blue">
               <h3>Forecast Month</h3>
-
-              <h2>{data.month}</h2>
+        
+              <h2>{months[forecast.month]}</h2>
             </div>
 
             <div className="summary-card green">
-              <h3>Forecast Period</h3>
+              <h3>Forecast Days</h3>
 
-              <h2>{data.days} Days</h2>
+              <h2>{forecast.days}</h2>
             </div>
 
             <div className="summary-card orange">
-              <h3>Daily Average</h3>
+              <h3>Predicted Units</h3>
 
-              <h2>{data.daily_units} Units</h2>
+              <h2>{forecast.total_units}</h2>
+            </div>
+
+            <div className="summary-card teal">
+              <h3>Estimated Bill</h3>
+
+              <h2>₹ {forecast.estimated_bill}</h2>
             </div>
           </div>
-        </div>
-
-        <div className="chart-card">
-          <h2>📊 Appliance Summary</h2>
-
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: "20px",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  background: "#2563eb",
-                  color: "white",
-                }}
-              >
-                <th style={{ padding: "12px" }}>Appliance</th>
-
-                <th style={{ padding: "12px" }}>Units</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {data.appliances.map((item, index) => (
-                <tr
-                  key={index}
-                  style={{
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  <td style={{ padding: "10px" }}>{item.name}</td>
-
-                  <td style={{ padding: "10px" }}>{item.units}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

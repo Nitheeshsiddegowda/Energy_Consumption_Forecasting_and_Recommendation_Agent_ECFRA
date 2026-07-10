@@ -253,7 +253,11 @@ class DatasetDistributionView(APIView):
 
                 for _, row in df.iterrows()
             ]
-
+            appliance_chart = sorted(
+                appliance_chart,
+                key=lambda x: x["units"],
+                reverse=True
+            )
             return Response({
 
                 "monthly_chart": monthly_chart,
