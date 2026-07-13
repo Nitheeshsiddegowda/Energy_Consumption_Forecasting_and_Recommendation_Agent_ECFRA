@@ -1,0 +1,25 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# SQLite Database
+db.sqlite3
+
+# Media Uploads
+media/
+
+# Environment Variables
+.env
+
+# React
+node_modules/
+build/
+
+# VS Code
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
