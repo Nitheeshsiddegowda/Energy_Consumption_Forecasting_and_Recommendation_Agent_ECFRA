@@ -1,0 +1,99 @@
+How to Run the Project
+
+Prerequisites
+Make sure the following software is installed:
+- Python 3.10 or above
+- Node.js (v18 or above recommended)
+- npm
+- Git
+
+1️⃣ Clone the Repository
+git clone https://github.com/Nitheeshsiddegowda/Energy_Consumption_Forecasting_and_Recommendation_Agent_ECFRA.git
+cd Energy_Consumption_Forecasting_and_Recommendation_Agent_ECFRA
+
+2️⃣ Backend Setup
+Navigate to the backend folder:
+cd backend
+Create a virtual environment:
+# Windows
+python -m venv venv
+venv\Scripts\activate
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
+
+Install dependencies:
+pip install -r requirements.txt
+
+Apply database migrations:
+python manage.py makemigrations
+python manage.py migrate
+
+(Optional) Create an admin user:
+python manage.py createsuperuser
+
+Start the Django server:
+python manage.py runserver
+
+Backend will run at:
+http://127.0.0.1:8000/
+
+3️⃣ Frontend Setup
+
+Open a new terminal.
+Navigate to the frontend folder:
+cd frontend
+Install dependencies:
+npm install
+
+Start the React development server:
+npm start
+
+Frontend will run at:
+http://localhost:3000/
+
+4️⃣ Using the Application
+
+1. Register a new user.
+2. Login using your credentials.
+3. Upload an energy consumption CSV dataset.
+4. View dataset preview.
+5. Analyze energy consumption in the Overview page.
+6. Explore appliance-wise distribution.
+7. Generate energy forecasts.
+8. View personalized recommendations.
+9. Analyze all insights in the Dashboard.
+
+📂 Dataset
+
+Upload a CSV dataset containing historical household energy consumption.
+The dataset should include columns such as:
+- Date
+- Temperature
+- Humidity
+- Fan(Units)
+- AC(Units)
+- TV(Units)
+- Fridge(Units)
+- Bulb(Units)
+- Monitor(Units)
+- Motor(Units)
+- Units
+- ElectricityBill
+
+Authentication
+The application uses JWT (JSON Web Token) authentication.
+After successful login:
+- Access Token is generated.
+- Refresh Token is generated.
+- Protected routes can only be accessed by authenticated users.
+
+Project Screens
+- Home Page
+- Login
+- Signup
+- Dataset Upload
+- Overview
+- Distribution
+- Forecasting and Recommendation
+- Dashboard
